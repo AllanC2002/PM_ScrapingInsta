@@ -1,14 +1,7 @@
 """
-Instagram Scraper — Backend FastAPI
-=====================================
-Expone un endpoint REST que el frontend React consume.
-
-INSTALACIÓN:
     pip install fastapi uvicorn playwright python-dotenv
     playwright install chromium
 
-EJECUTAR:
-    cd backend
     uvicorn main:app --reload --port 8000
 """
 
@@ -30,7 +23,6 @@ load_dotenv()
 
 app = FastAPI(title="Instagram Scraper API")
 
-# CORS — permite que el frontend React (puerto 5173) se comunique con el backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
