@@ -1,13 +1,508 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instagram Scraper</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0a0a0f;
+      --surface:  #111118;
+      --border:   #1e1e2a;
+      --accent:   #e8ff47;
+      --accent2:  #ff6b6b;
+      --text:     #f0f0f5;
+      --muted:    #6b6b80;
+      --card:     #13131c;
+      --radius:   12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 52px; }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 4px 14px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    h1 span { color: var(--accent); }
+
+    .subtitle {
+      margin-top: 14px;
+      font-size: 15px;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    /* ── Search ── */
+    .search-box {
+      display: flex;
+      gap: 12px;
+      max-width: 580px;
+      margin: 0 auto 16px;
+      flex-wrap: wrap;
+    }
+
+    .input-wrap { flex: 1; position: relative; min-width: 180px; }
+
+    .at-sign {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      pointer-events: none;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      padding: 13px 14px 13px 34px;
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus { border-color: var(--accent); }
+
+    select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 13px 14px;
+      border-radius: var(--radius);
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus { border-color: var(--accent); color: var(--text); }
+
+    button {
+      background: var(--accent);
+      color: #0a0a0f;
+      border: none;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      padding: 13px 26px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      white-space: nowrap;
+    }
+
+    button:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Error ── */
+    .error {
+      max-width: 580px;
+      margin: 20px auto 0;
+      background: rgba(255,107,107,0.1);
+      border: 1px solid rgba(255,107,107,0.3);
+      color: var(--accent2);
+      padding: 13px 18px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      text-align: center;
+      display: none;
+    }
+
+    /* ── Spinner ── */
+    .spinner-wrap {
+      text-align: center;
+      padding: 80px 0;
+      display: none;
+    }
+
+    .spinner {
+      width: 38px;
+      height: 38px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .spinner-label {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* ── Resultados ── */
+    #results { display: none; }
+
+    /* ── Perfil ── */
+    .profile-card {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 36px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .pic-wrap { position: relative; flex-shrink: 0; }
+
+    .profile-pic {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .pic-ring {
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      pointer-events: none;
+    }
+
+    .profile-username {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .profile-fullname { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+    .profile-bio {
+      font-size: 13px;
+      font-weight: 300;
+      margin-top: 8px;
+      max-width: 420px;
+      line-height: 1.5;
+      opacity: 0.8;
+    }
+
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-top: 14px;
+    }
+
+    .stat { text-align: center; }
+
+    .stat-val {
+      display: block;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      color: var(--accent);
+    }
+
+    .stat-lbl {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .stat-div { width: 1px; height: 28px; background: var(--border); }
+
+    /* ── Grid de posts ── */
+    .section-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .post-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform 0.2s, border-color 0.2s;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .post-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+
+    .img-wrap {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+
+    .post-card:hover .img-wrap img { transform: scale(1.05); }
+
+    .img-fallback {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; color: var(--muted);
+    }
+
+    .overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.25s;
+    }
+
+    .post-card:hover .overlay { opacity: 1; }
+
+    .overlay-stats {
+      display: flex; gap: 22px;
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700; font-size: 14px;
+    }
+
+    .type-badge {
+      position: absolute; top: 9px; right: 9px;
+      background: rgba(0,0,0,0.7);
+      color: var(--accent);
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 100px;
+      border: 1px solid rgba(232,255,71,0.3);
+    }
+
+    .post-meta { padding: 11px 13px 13px; }
+
+    .post-date {
+      font-size: 10px; color: var(--muted);
+      letter-spacing: 0.05em; margin-bottom: 4px;
+    }
+
+    .post-caption {
+      font-size: 12px; font-weight: 300;
+      line-height: 1.4; opacity: 0.7;
+    }
+
+    @media (max-width: 580px) {
+      .profile-card { flex-direction: column; text-align: center; }
+      .stats { justify-content: center; }
+      .search-box { flex-direction: column; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <header class="header">
+      <div class="eyebrow">Instagram Scraper</div>
+      <h1>Explora cualquier<br><span>perfil público</span></h1>
+      <p class="subtitle">Ingresa un usuario y visualiza sus publicaciones al instante</p>
+    </header>
+
+    <div class="search-box">
+      <div class="input-wrap">
+        <span class="at-sign">@</span>
+        <input type="text" id="username" placeholder="usuario" />
+      </div>
+      <select id="numPosts">
+        <option value="5">5 posts</option>
+        <option value="10" selected>10 posts</option>
+        <option value="15">15 posts</option>
+        <option value="20">20 posts</option>
+      </select>
+      <button id="btnSearch" onclick="buscar()">Buscar →</button>
+    </div>
+
+    <div class="error" id="error"></div>
+
+    <div class="spinner-wrap" id="spinner">
+      <div class="spinner"></div>
+      <p class="spinner-label">Obteniendo posts...</p>
+    </div>
+
+    <div id="results">
+      <div class="profile-card" id="profileCard"></div>
+      <p class="section-label">Publicaciones recientes</p>
+      <div class="grid" id="grid"></div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = "http://localhost:8000";
+
+    function fmt(n) {
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+      if (n >= 1_000)     return (n / 1_000).toFixed(1) + "K";
+      return n.toLocaleString();
+    }
+
+    function setVisible(id, show) {
+      document.getElementById(id).style.display = show ? (id === "results" || id === "spinner" || id === "error" ? "block" : "flex") : "none";
+    }
+
+    async function buscar() {
+      const username = document.getElementById("username").value.trim().replace(/^@/, "");
+      const numPosts = document.getElementById("numPosts").value;
+      if (!username) return;
+
+      // Reset UI
+      setVisible("error",   false);
+      setVisible("results", false);
+      setVisible("spinner", true);
+      document.getElementById("btnSearch").disabled = true;
+
+      try {
+        const res  = await fetch(`${API}/scrape/${username}?num_posts=${numPosts}`);
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.detail || `Error ${res.status}`);
+
+        renderPerfil(data);
+        renderPosts(data.posts);
+        setVisible("results", true);
+
+      } catch (err) {
+        const el = document.getElementById("error");
+        el.textContent = "⚠ " + (err.message || "No se pudo conectar al servidor.");
+        setVisible("error", true);
+      } finally {
+        setVisible("spinner", false);
+        document.getElementById("btnSearch").disabled = false;
+      }
+    }
+
+    function renderPerfil(data) {
+      document.getElementById("profileCard").innerHTML = `
+        <div class="pic-wrap">
+          <img class="profile-pic" src="${data.profile_pic}" alt="${data.username}"
+               onerror="this.outerHTML='<div class=\'profile-pic img-fallback\'>${data.username[0].toUpperCase()}</div>'" />
+          <div class="pic-ring"></div>
+        </div>
+        <div>
+          <p class="profile-username">@${data.username}</p>
+          <p class="profile-fullname">${data.full_name}</p>
+          ${data.bio ? `<p class="profile-bio">${data.bio}</p>` : ""}
+          <div class="stats">
+            <div class="stat">
+              <span class="stat-val">${fmt(data.followers)}</span>
+              <span class="stat-lbl">seguidores</span>
+            </div>
+            <div class="stat-div"></div>
+            <div class="stat">
+              <span class="stat-val">${fmt(data.following)}</span>
+              <span class="stat-lbl">siguiendo</span>
+            </div>
+            <div class="stat-div"></div>
+            <div class="stat">
+              <span class="stat-val">${data.posts.length}</span>
+              <span class="stat-lbl">posts</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPosts(posts) {
+      const grid = document.getElementById("grid");
+      grid.innerHTML = posts.map((p, i) => `
+        <a class="post-card" href="${p.url}" target="_blank" rel="noopener"
+           style="animation-delay:${i * 55}ms">
+          <div class="img-wrap">
+            ${p.imagen_url
+              ? `<img src="${p.imagen_url}" alt="post" loading="lazy"
+                      onerror="this.outerHTML='<div class=\'img-fallback\'>${p.tipo === "Video" ? "▶" : p.tipo === "Carrusel" ? "⧉" : "◻"}</div>'" />`
+              : `<div class="img-fallback">${p.tipo === "Video" ? "▶" : "◻"}</div>`
+            }
+            <div class="overlay">
+              <div class="overlay-stats">
+                <span>❤ ${fmt(p.likes)}</span>
+                <span>💬 ${fmt(p.comentarios)}</span>
+              </div>
+            </div>
+            <span class="type-badge">${p.tipo}</span>
+          </div>
+          <div class="post-meta">
+            <p class="post-date">${p.fecha}</p>
+            ${p.caption ? `<p class="post-caption">${p.caption.slice(0, 80)}${p.caption.length > 80 ? "…" : ""}</p>` : ""}
+          </div>
+        </a>
+      `).join("");
+    }
+
+    // Buscar también con Enter
+    document.getElementById("username").addEventListener("keydown", e => {
+      if (e.key === "Enter") buscar();
+    });
+  </script>
+</body>
 </html>
