@@ -1,6 +1,4 @@
 """
-Instagram Scraper — Backend FastAPI
-=====================================
 INSTALACIÓN:
     pip install fastapi uvicorn playwright python-dotenv requests
     playwright install chromium
@@ -20,23 +18,21 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel #para definir restricciones de los datos que se reciben y se envían en los endpoints, como un contrato de lo que se espera
 from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(title="Instagram Scraper API")
+app = FastAPI(title="Instagram Scraper")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:5173","http://localhost:5500","http://127.0.0.1:5500"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-# ── Modelos ───────────────────────────────────────
 
 class Post(BaseModel):
     id: str
@@ -59,9 +55,7 @@ class ProfileResponse(BaseModel):
     posts: list[Post]
 
 
-# ── Helpers ───────────────────────────────────────
-
-def get_cookies() -> list[dict]:
+def get_cookies() -> list[dict]: #Lee las credenciales del entorno y las devuelve en el formato que Playwright entiende para configurar las cookies de la sesión de Instagram. Estas cookies son necesarias para acceder a los endpoints privados de Instagram y evitar bloqueos por parte de la plataforma.
     sessionid  = os.getenv("IG_SESSIONID", "")
     csrftoken  = os.getenv("IG_CSRFTOKEN", "")
     ds_user_id = os.getenv("IG_DS_USER_ID", "")
@@ -82,7 +76,7 @@ def human_delay(min_s=1.5, max_s=3.5):
     time.sleep(random.uniform(min_s, max_s))
 
 
-def ig_fetch(page, url: str) -> dict:
+def ig_fetch(page, url: str) -> dict: #Ejecuta una petición HTTP desde dentro del navegador Chrome Por qué: Si la petición viene de Python directamente, Instagram la identifica como automatizada
     result = page.evaluate(f"""
         async () => {{
             const resp = await fetch({json.dumps(url)}, {{
@@ -105,7 +99,7 @@ def fetch_image_base64(img_url: str) -> str:
     """
     if not img_url:
         return ""
-    try:
+    try: #user agent es para identificarse como navegador real y evitar bloqueos simples de bots. Referer es para evitar bloqueos por CORS.
         headers = {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -128,13 +122,14 @@ def scrape_profile(username: str, num_posts: int) -> dict:
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=True,
-            args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
+            headless=True, #sin interfaz gráfica no abre la ventana del navegador
+            args=["--disable-blink-features=AutomationControlled", "--no-sandbox"] #oculta que es un navegador automatizado (osea controlado por bot)
         )
+        #Estucutra en playwrigth es browser -> context -> page. El context es como una sesión de navegador, donde se pueden configurar cookies, user agent, etc. El page es la pestaña donde se navega y se hacen las acciones.
         context = browser.new_context(
-            viewport={"width": 1280, "height": 800},
+            viewport={"width": 1280, "height": 800}, #tamaño de la ventana del navegador, no es necesario pero ayuda a evitar bloqueos
             user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " #identificarse como navegador real
                 "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
             ),
             locale="es-ES",
@@ -142,10 +137,10 @@ def scrape_profile(username: str, num_posts: int) -> dict:
         context.add_cookies(cookies)
         page = context.new_page()
 
-        page.goto("https://www.instagram.com/", wait_until="domcontentloaded")
-        human_delay(2, 3)
+        page.goto("https://www.instagram.com/", wait_until="domcontentloaded") #espera a que se cargue el HTML inicial, no espera a que carguen las imágenes ni los scripts
+        human_delay(2, 3) #simula el tiempo que tarda un humano en leer la página y evitar bloqueos por actividad sospechosa
 
-        # ── 1. Perfil ──
+        # Perfil 
         profile_result = ig_fetch(
             page,
             f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
@@ -160,18 +155,18 @@ def scrape_profile(username: str, num_posts: int) -> dict:
         if profile_result["status"] != 200:
             raise HTTPException(status_code=500, detail=f"Error Instagram: HTTP {profile_result['status']}")
 
-        profile_data = json.loads(profile_result["body"])
-        user         = profile_data["data"]["user"]
+        profile_data = json.loads(profile_result["body"]) #json.loads convierte el string JSON a un diccionario de Python
+        user         = profile_data["data"]["user"] #estructura del JSON de Instagram
         user_id      = user["id"]
 
-        # ── 2. Posts ──
+        # Posts 
         posts  = []
         cursor = None
 
         while len(posts) < num_posts:
-            url = f"https://www.instagram.com/api/v1/feed/user/{user_id}/?count=12"
+            url = f"https://www.instagram.com/api/v1/feed/user/{user_id}/?count=12" #endpoint para obtener el feed de un usuario, count es la cantidad de posts a obtener por página (máximo 12)
             if cursor:
-                url += f"&max_id={cursor}"
+                url += f"&max_id={cursor}" #cursor para paginar, indica desde qué post seguir obteniendo (el id del último post obtenido en la página anterior)
 
             feed_result = ig_fetch(page, url)
 
@@ -196,7 +191,7 @@ def scrape_profile(username: str, num_posts: int) -> dict:
 
         browser.close()
 
-    # ── 3. Convertir imágenes a base64 (fuera del browser, sin CORS) ──
+    # Convertir imágenes a base64 (fuera del browser, sin CORS) 
     raw_profile_pic = user.get("profile_pic_url_hd", user.get("profile_pic_url", ""))
     profile_pic_b64 = fetch_image_base64(raw_profile_pic)
 
@@ -253,7 +248,7 @@ def parse_post(item: dict) -> dict:
 
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "Instagram Scraper API activa 🚀"}
+    return {"status": "ok", "message": "Instagram Scraper API activa"}
 
 
 @app.get("/scrape/{username}", response_model=ProfileResponse)
