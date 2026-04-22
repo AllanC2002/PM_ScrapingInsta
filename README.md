@@ -22,8 +22,12 @@ IG_DS_USER_ID=tu_ds_user_id_aqui
 IG_DID=tu_ig_did_aqui
 ```
 ### 3. Requerimientos
-```cd
+```cd OP1
 pip install -r requirements.txt
+playwright install chromium
+```
+```cd OP1
+pip install fastapi uvicorn playwright python-dotenv requests
 playwright install chromium
 ```
 ### 4. Ejecucion
