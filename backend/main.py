@@ -1,6 +1,7 @@
 """
 INSTALACIÓN:
     pip install fastapi uvicorn playwright python-dotenv requests
+    consola
     playwright install chromium
 
 EJECUTAR:
