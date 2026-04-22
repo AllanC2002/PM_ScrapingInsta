@@ -4,7 +4,11 @@ INSTALACIÓN:
     playwright install chromium
 
 EJECUTAR:
+Terminal 1 (Backend):
+    cd backend
     uvicorn main:app --reload --port 8000
+Terminal 2 (Frontend):
+    cd frontend
     python -m http.server 3000
 """
 
