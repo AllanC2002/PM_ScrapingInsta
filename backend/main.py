@@ -4,8 +4,8 @@ INSTALACIÓN:
     playwright install chromium
 
 EJECUTAR:
-    cd backend
     uvicorn main:app --reload --port 8000
+    python -m http.server 3000
 """
 
 import json
@@ -183,10 +183,10 @@ def scrape_profile(username: str, num_posts: int) -> dict:
                 if len(posts) >= num_posts:
                     break
 
-            if not feed_data.get("more_available") or not items:
+            if not feed_data.get("more_available") or not items: #si Instagram indica que no hay más posts disponibles con more_available, o si la página no devuelve ningún post (items vacío)
                 break
 
-            cursor = feed_data.get("next_max_id")
+            cursor = feed_data.get("next_max_id") # actualiza el cursor para la siguiente página, es el id del último post obtenido en esta página, para que la siguiente página devuelva los posts anteriores a ese id
             human_delay(2, 4)
 
         browser.close()
@@ -212,7 +212,7 @@ def scrape_profile(username: str, num_posts: int) -> dict:
 
 def parse_post(item: dict) -> dict:
     caption = ""
-    cap_obj = item.get("caption")
+    cap_obj = item.get("caption") #el caption es el texto que acompaña a la publicación, puede ser un string o un objeto con más información. Si es un objeto, se extrae el campo "text" que contiene el texto del caption. Si no existe, se deja como cadena vacía.
     if cap_obj and isinstance(cap_obj, dict):
         caption = cap_obj.get("text", "")
 
