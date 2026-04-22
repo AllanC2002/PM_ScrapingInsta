@@ -20,17 +20,18 @@ IG_SESSIONID=tu_sessionid_aqui
 IG_CSRFTOKEN=tu_csrftoken_aqui
 IG_DS_USER_ID=tu_ds_user_id_aqui
 IG_DID=tu_ig_did_aqui
-
+```
 ### 3. Requerimientos
 ```cd
 pip install -r requirements.txt
 playwright install chromium
-
+```
 ### 4. Ejecucion
 ```cd Terminal 1
 cd backend
 uvicorn main:app --reload --port 8000
-
+```
 ```cd Terminal 2
 cd frontend
 python -m http.server 3000
+```
