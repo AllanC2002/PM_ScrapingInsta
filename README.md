@@ -15,11 +15,11 @@ Herramienta de scraping para perfiles públicos de Instagram. Extrae publicacion
 ```
 PM_ScrapingInsta/
 ├── backend/
-│   ├── main.py          ← API + lógica de scraping
+│   ├── main.py         
 │   ├── requirements.txt
-│   └── .env             ← cookies de sesión (no subir a Git)
+│   └── .env             
 └── frontend/
-    └── index.html       ← interfaz web
+    └── index.html    
 ```
 
 ## 🛠️ Requisitos del Sistema
