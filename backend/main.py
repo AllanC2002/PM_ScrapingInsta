@@ -94,8 +94,14 @@ def ig_fetch(page, url: str) -> dict: #Ejecuta una petición HTTP desde dentro d
             return {{ status: resp.status, body: await resp.text() }};
         }}
     """)
-    return result
-
+    return result 
+"""
+#devuelve un diccionario con el código de estado HTTP y el cuerpo de la respuesta como texto, que luego se procesa en el backend para extraer la información necesaria. de modo 
+{
+    "status": 200,   código de respuesta HTTP
+    "body": '{"data": {"user": {"id": "123", "full_name": "user1..."}}}' # JSON como texto
+}
+"""
 
 def fetch_image_base64(img_url: str) -> str:
     """
