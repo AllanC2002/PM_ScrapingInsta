@@ -1,4 +1,4 @@
-# Instagram Automation System (FastAPI + Playwright)
+# Instagram Scraper
 
 Herramienta de scraping para perfiles públicos de Instagram. Extrae publicaciones, información del perfil e imágenes usando Playwright y las expone a través de una API REST con FastAPI.
 
