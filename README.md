@@ -91,7 +91,7 @@ GET http://localhost:8000/scrape/natgeo?num_posts=10
 - El frontend llama al backend: GET /scrape/{username}
 - El backend abre un navegador Chrome con las cookies
 - El navegador navega a Instagram y queda autenticado
-- Se consulta la API interna de Instagram para obtener el perfil
+- Se consulta la API interna (backend) de Instagram para obtener el perfil -> /api/v1/users/web_profile_info/?username=user
 - Se consulta el feed del usuario para obtener los posts en páginas de 12
 - Se cierra el navegador
 - El backend descarga las imágenes y las convierte a base64
@@ -101,7 +101,7 @@ GET http://localhost:8000/scrape/natgeo?num_posts=10
  
 ### 7. Delays y rate limiting
  
-Entre cada petición se introduce una pausa aleatoria de entre 2 y 4 segundos. La aleatoriedad es intencional — los bots suelen hacer peticiones en intervalos fijos y perfectos, lo cual Instagram detecta.
+Entre cada petición se introduce una pausa aleatoria de entre 2 y 4 segundos. La aleatoriedad es intencional, los bots suelen hacer peticiones en intervalos fijos y perfectos, lo cual Instagram detecta.
 
 ## 8. Limitaciones
  
